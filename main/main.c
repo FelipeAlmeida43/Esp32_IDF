@@ -135,6 +135,7 @@ void app_main(void)
 
 	ESP_ERROR_CHECK( nvs_flash_init() );
 	gpio_set_direction(LED, GPIO_MODE_OUTPUT);
+	gpio_set_level(LED, 1);
 	xTaskCreatePinnedToCore(led_blink_task,
 	                        "led_blink_task",
 	                        2048,
