@@ -17,7 +17,7 @@
 #include "driver/uart.h"
 
 #define LED GPIO_NUM_2
-
+int level = 0;
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t s_wifi_event_group;
 /* The event group allows multiple bits for each event,
@@ -77,6 +77,13 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         ESP_ERROR_CHECK( esp_wifi_disconnect() );
         ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
         esp_wifi_connect();
+        xTaskCreatePinnedToCore(led_blink_task,
+                           	                        "led_blink_task",
+                           	                        2048,
+                           	                        NULL,
+                           	                        4,
+                           	                        NULL,
+                           	                        APP_CPU_NUM);
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_SEND_ACK_DONE) {
         xEventGroupSetBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);
     }
@@ -111,31 +118,34 @@ static void smartconfig_example_task(void * parm)
         if(uxBits & CONNECTED_BIT) {
             ESP_LOGI(TAG, "WiFi Connected to ap");
             gpio_set_level(LED, 1);
+
         }
         if(uxBits & ESPTOUCH_DONE_BIT) {
             ESP_LOGI(TAG, "smartconfig over");
             esp_smartconfig_stop();
             vTaskDelete(NULL);
         }
+
     }
 }
 static void led_blink_task(void * parm)
 {
 	for(;;)
 	{
-		int level = 0;
+
 		gpio_set_level(LED, level);
 		level = !level;
 		vTaskDelay(300 / portTICK_PERIOD_MS);
 	}
-	vTaskDelete(NULL);
+	//vTaskDelete(NULL);
 }
 void app_main(void)
 {
 
 	ESP_ERROR_CHECK( nvs_flash_init() );
 	gpio_set_direction(LED, GPIO_MODE_OUTPUT);
-	gpio_set_level(LED, 1);
+
+	//gpio_set_level(LED, 1);
 	/*xTaskCreatePinnedToCore(led_blink_task,
 	                        "led_blink_task",
 	                        2048,
